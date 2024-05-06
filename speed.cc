@@ -31,27 +31,82 @@
 
 int main(int argc, char *argv[])
 {
-  QCoreApplication qapplication(argc, argv);
-  int tasks = 8;
+  QFileInfo destination;
+  QFileInfoList files;
+  auto bytes = static_cast<quint64> (4096);
+  auto tasks = static_cast<quint64> (8);
 
   for(int i = 0; i < argc; i++)
     if(argv && argv[i])
       {
-	if(strcmp(argv[i], "--tasks") == 0)
+	if(argc - 1 == i)
+	  destination = QFileInfo(argv[i]);
+	else if(strcmp(argv[i], "--bytes") == 0)
 	  {
 	    i += 1;
 
 	    if(argc > i)
-	      tasks = QVariant(argv[i]).toInt();
+	      bytes = QVariant(argv[i]).toULongLong();
+	  }
+	else if(strcmp(argv[i], "--tasks") == 0)
+	  {
+	    i += 1;
+
+	    if(argc > i)
+	      tasks = QVariant(argv[i]).toULongLong();
 	  }
 	else
 	  {
+	    QDir directory;
+
+	    files << directory.entryInfoList(QStringList() << argv[i]);
 	  }
       }
 
-  tasks = qMax(1, tasks);
+  if(!destination.isWritable())
+    {
+      qDebug() << QObject::tr("Please specify a writable destination.");
+      return EXIT_FAILURE;
+    }
+  else if(files.isEmpty())
+    {
+      qDebug() << QObject::tr("Copy what?");
+      return EXIT_FAILURE;
+    }
 
-  auto rc = qapplication.exec();
+  QMutableListIterator<QFileInfo> it(files);
+
+  while(it.hasNext())
+    {
+      it.next();
+
+      if(destination.isDir())
+	{
+	  if(destination.absoluteFilePath() == it.value().absolutePath())
+	    {
+	      qDebug() << QObject::tr("File %1 already exists.").
+		arg(it.value().fileName());
+	      it.remove();
+	    }
+	}
+      else if(destination.absoluteFilePath() == it.value().absoluteFilePath())
+	{
+	  qDebug() << QObject::tr("Cannot copy %1 onto %2.").
+	    arg(it.value().fileName()).
+	    arg(destination.fileName());
+	  it.remove();
+	}
+    }
+
+  if(files.isEmpty())
+    return EXIT_FAILURE;
+
+  bytes = qMax(bytes, static_cast<quint64> (1024));
+  tasks = qMax(static_cast<quint64> (1), tasks);
+
+  QCoreApplication application(argc, argv);
+
+  auto rc = application.exec();
 
   return static_cast<int> (rc);
 }
