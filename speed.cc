@@ -33,6 +33,7 @@ int main(int argc, char *argv[])
 {
   QFileInfo destination;
   QFileInfoList files;
+  QHash<QString, char> contains;
   auto bytes = static_cast<quint64> (4096);
   auto tasks = static_cast<quint64> (8);
 
@@ -41,6 +42,27 @@ int main(int argc, char *argv[])
       {
 	if(argc - 1 == i)
 	  destination = QFileInfo(argv[i]);
+	else if(i > 0)
+	  {
+	    QDir directory;
+	    auto list(directory.entryInfoList(QStringList() << argv[i]));
+
+	    if(list.isEmpty())
+	      {
+		if(!contains.contains(argv[i]))
+		  {
+		    contains[argv[i]] = 0;
+		    files << QFileInfo(argv[i]);
+		  }
+	      }
+	    else
+	      foreach(auto const &file, list)
+		if(!contains.contains(file.canonicalFilePath()))
+		  {
+		    contains[file.canonicalFilePath()] = 0;
+		    files << list;
+		  }
+	  }
 	else if(strcmp(argv[i], "--bytes") == 0)
 	  {
 	    i += 1;
@@ -55,12 +77,6 @@ int main(int argc, char *argv[])
 	    if(argc > i)
 	      tasks = QVariant(argv[i]).toULongLong();
 	  }
-	else
-	  {
-	    QDir directory;
-
-	    files << directory.entryInfoList(QStringList() << argv[i]);
-	  }
       }
 
   if(!destination.isWritable())
@@ -70,7 +86,7 @@ int main(int argc, char *argv[])
     }
   else if(files.isEmpty())
     {
-      qDebug() << QObject::tr("Copy what?");
+      qDebug() << QObject::tr("Please provide at least one file.");
       return EXIT_FAILURE;
     }
 
@@ -82,18 +98,28 @@ int main(int argc, char *argv[])
 
       if(destination.isDir())
 	{
-	  if(destination.absoluteFilePath() == it.value().absolutePath())
+	  if(destination.canonicalFilePath() == it.value().canonicalPath())
 	    {
-	      qDebug() << QObject::tr("File %1 already exists.").
+	      qDebug() << QObject::tr("File %1 already exists. Skipping.").
 		arg(it.value().fileName());
 	      it.remove();
+	      continue;
 	    }
 	}
-      else if(destination.absoluteFilePath() == it.value().absoluteFilePath())
+
+      if(destination.canonicalFilePath() == it.value().canonicalFilePath())
 	{
-	  qDebug() << QObject::tr("Cannot copy %1 onto %2.").
+	  qDebug() << QObject::tr("Cannot copy %1 onto %2. Skipping.").
 	    arg(it.value().fileName()).
 	    arg(destination.fileName());
+	  it.remove();
+	  continue;
+	}
+
+      if(it.value().isReadable() == false)
+	{
+	  qDebug() << QObject::tr("Cannot read %1. Skipping.").
+	    arg(it.value().fileName());
 	  it.remove();
 	}
     }
