@@ -29,6 +29,8 @@
 #include <QDir>
 #include <QtDebug>
 
+#include "copy.h"
+
 int main(int argc, char *argv[])
 {
   QFileInfo destination;
@@ -131,6 +133,11 @@ int main(int argc, char *argv[])
   tasks = qMax(static_cast<quint64> (1), tasks);
 
   QCoreApplication application(argc, argv);
+
+  for(int i = 0; i < files.size(); i++)
+    {
+      copy c(destination, files.at(i), bytes, tasks);
+    }
 
   auto rc = application.exec();
 

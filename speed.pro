@@ -102,6 +102,7 @@ unix {
 QMAKE_EXTRA_TARGETS += purge
 }
 
+HEADERS     += copy.h
 INCLUDEPATH += .
 MOC_DIR     = temporary/moc
 OBJECTS_DIR = temporary/obj
