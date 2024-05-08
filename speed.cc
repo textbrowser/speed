@@ -110,6 +110,7 @@ int main(int argc, char *argv[])
     }
 
   QList<QFuture<void> > futures;
+  QList<copy *> copies;
 
   for(int i = 0; i < files.size(); i++)
     {
@@ -143,6 +144,7 @@ int main(int argc, char *argv[])
       QFuture<void> future;
       auto c = new copy(destination, file, bytes);
 
+      copies << c;
 #if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
       future = QtConcurrent::run(c, &copy::copy_bytes);
 #else
@@ -151,9 +153,13 @@ int main(int argc, char *argv[])
       futures << future;
     }
 
-  for(int i = 0; i < futures.size(); i++)
-    if(!futures[i].isFinished())
-      futures[i].waitForFinished();
+  for(int i = 0; i < copies.size(); i++)
+    {
+      if(!futures[i].isFinished())
+	futures[i].waitForFinished();
+
+      delete copies.at(i);
+    }
 
   return EXIT_SUCCESS;
 }

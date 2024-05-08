@@ -63,7 +63,7 @@ class copy: public QObject
 
     QFile file(m_file_info.absoluteFilePath());
 
-    if(!file.open(QIODevice::ReadOnly))
+    if(!file.open(QIODevice::ReadOnly | QIODevice::Unbuffered))
       return;
 
     auto bytes = new char[m_bytes];
@@ -73,7 +73,6 @@ class copy: public QObject
       destination.write(bytes, rc);
 
     delete []bytes;
-    delete this;
   }
 
  private:
