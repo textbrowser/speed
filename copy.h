@@ -58,7 +58,7 @@ class copy: public QObject
   {
     QFile destination(m_destination.absoluteFilePath());
 
-    if(!destination.open(QIODevice::Truncate | QIODevice::WriteOnly))
+    if(!destination.open(QIODevice::WriteOnly))
       return;
 
     QFile file(m_file_info.absoluteFilePath());
@@ -73,6 +73,7 @@ class copy: public QObject
       destination.write(bytes, rc);
 
     delete []bytes;
+    delete this;
   }
 
  private:

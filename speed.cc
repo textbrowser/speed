@@ -137,7 +137,8 @@ int main(int argc, char *argv[])
     }
 
   for(int i = 0; i < futures.size(); i++)
-    futures[i].waitForFinished();
+    if(!futures[i].isFinished())
+      futures[i].waitForFinished();
 
   return EXIT_SUCCESS;
 }
