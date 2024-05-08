@@ -32,6 +32,8 @@
 
 #include "copy.h"
 
+const static char *version = "2024.05.08";
+
 int main(int argc, char *argv[])
 {
   QFileInfo destination;
@@ -43,13 +45,26 @@ int main(int argc, char *argv[])
     if(argv && argv[i])
       {
 	if(argc - 1 == i)
-	  destination = QFileInfo(argv[i]);
+	  {
+	    if(strcmp(argv[i], "--version") == 0)
+	      {
+		qDebug() << "speed: " << version;
+		return EXIT_SUCCESS;
+	      }
+	    else
+	      destination = QFileInfo(argv[i]);
+	  }
 	else if(strcmp(argv[i], "--bytes") == 0)
 	  {
 	    i += 1;
 
 	    if(argc > i)
 	      bytes = QVariant(QString(argv[i])).toULongLong();
+	  }
+	else if(strcmp(argv[i], "--version") == 0)
+	  {
+	    qDebug() << "speed: " << version;
+	    return EXIT_SUCCESS;
 	  }
 	else if(i > 0)
 	  {
