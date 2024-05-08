@@ -11,7 +11,7 @@
 **    notice, this list of conditions and the following disclaimer in the
 **    documentation and/or other materials provided with the distribution.
 ** 3. The name of the author may not be used to endorse or promote products
-**    derived from Glitch without specific prior written permission.
+**    derived from Speed without specific prior written permission.
 **
 ** SPEED IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
 ** IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -41,7 +41,7 @@ class copy: public QObject
   {
     m_bytes = qBound(static_cast<qint64> (1024),
 		     static_cast<qint64> (bytes),
-		     static_cast<qint64> (65536));
+		     static_cast<qint64> (131072));
     m_destination = destination.isDir() ?
       QFileInfo(destination.absoluteFilePath() +
 		QDir::separator() +
