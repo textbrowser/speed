@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 	    i += 1;
 
 	    if(argc > i)
-	      bytes = QVariant(argv[i]).toULongLong();
+	      bytes = QVariant(QString(argv[i])).toULongLong();
 	  }
 	else if(i > 0)
 	  {

@@ -43,9 +43,9 @@ class copy: public QObject
 		     static_cast<qint64> (bytes),
 		     static_cast<qint64> (65536));
     m_destination = destination.isDir() ?
-      destination.canonicalFilePath() +
-      QDir::separator() +
-      file_info.fileName() :
+      QFileInfo(destination.absoluteFilePath() +
+		QDir::separator() +
+		file_info.fileName()) :
       destination;
     m_file_info = file_info;
   }
