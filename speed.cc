@@ -27,6 +27,7 @@
 
 #include <QCoreApplication>
 #include <QDir>
+#include <QtConcurrent>
 #include <QtDebug>
 
 #include "copy.h"
@@ -37,17 +38,25 @@ int main(int argc, char *argv[])
   QFileInfoList files;
   QHash<QString, char> contains;
   auto bytes = static_cast<quint64> (4096);
-  auto tasks = static_cast<quint64> (8);
 
   for(int i = 0; i < argc; i++)
     if(argv && argv[i])
       {
 	if(argc - 1 == i)
 	  destination = QFileInfo(argv[i]);
+	else if(strcmp(argv[i], "--bytes") == 0)
+	  {
+	    i += 1;
+
+	    if(argc > i)
+	      bytes = QVariant(argv[i]).toULongLong();
+	  }
 	else if(i > 0)
 	  {
-	    QDir directory;
-	    auto list(directory.entryInfoList(QStringList() << argv[i]));
+	    QDir directory(argv[i]);
+	    auto list
+	      (directory.
+	       entryInfoList(QDir::Files | QDir::NoSymLinks | QDir::Readable));
 
 	    if(list.isEmpty())
 	      {
@@ -61,23 +70,16 @@ int main(int argc, char *argv[])
 	      foreach(auto const &file, list)
 		if(!contains.contains(file.canonicalFilePath()))
 		  {
-		    contains[file.canonicalFilePath()] = 0;
-		    files << list;
+		    if(file.isDir())
+		      qDebug() << QObject::tr
+			("The file %1 is a directory. Skipping.").
+			arg(file.fileName());
+		    else
+		      {
+			contains[file.canonicalFilePath()] = 0;
+			files << file;
+		      }
 		  }
-	  }
-	else if(strcmp(argv[i], "--bytes") == 0)
-	  {
-	    i += 1;
-
-	    if(argc > i)
-	      bytes = QVariant(argv[i]).toULongLong();
-	  }
-	else if(strcmp(argv[i], "--tasks") == 0)
-	  {
-	    i += 1;
-
-	    if(argc > i)
-	      tasks = QVariant(argv[i]).toULongLong();
 	  }
       }
 
@@ -92,54 +94,50 @@ int main(int argc, char *argv[])
       return EXIT_FAILURE;
     }
 
-  QMutableListIterator<QFileInfo> it(files);
+  QList<QFuture<void> > futures;
 
-  while(it.hasNext())
+  for(int i = 0; i < files.size(); i++)
     {
-      it.next();
+      const auto &file(files.at(i));
 
       if(destination.isDir())
 	{
-	  if(destination.canonicalFilePath() == it.value().canonicalPath())
+	  if(destination.canonicalFilePath() == file.canonicalPath())
 	    {
-	      qDebug() << QObject::tr("File %1 already exists. Skipping.").
-		arg(it.value().fileName());
-	      it.remove();
+	      qDebug() << QObject::tr("The file %1 already exists. Skipping.").
+		arg(file.fileName());
 	      continue;
 	    }
 	}
 
-      if(destination.canonicalFilePath() == it.value().canonicalFilePath())
+      if(destination.canonicalFilePath() == file.canonicalFilePath())
 	{
 	  qDebug() << QObject::tr("Cannot copy %1 onto %2. Skipping.").
-	    arg(it.value().fileName()).
+	    arg(file.fileName()).
 	    arg(destination.fileName());
-	  it.remove();
 	  continue;
 	}
 
-      if(it.value().isReadable() == false)
+      if(file.isReadable() == false)
 	{
 	  qDebug() << QObject::tr("Cannot read %1. Skipping.").
-	    arg(it.value().fileName());
-	  it.remove();
+	    arg(file.fileName());
+	  continue;
 	}
+
+      QFuture<void> future;
+      auto c = new copy(destination, file, bytes);
+
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+      future = QtConcurrent::run(c, &copy::copy_bytes);
+#else
+      future = QtConcurrent::run(&copy::copy_bytes, c);
+#endif
+      futures << future;
     }
 
-  if(files.isEmpty())
-    return EXIT_FAILURE;
+  for(int i = 0; i < futures.size(); i++)
+    futures[i].waitForFinished();
 
-  bytes = qMax(bytes, static_cast<quint64> (1024));
-  tasks = qMax(static_cast<quint64> (1), tasks);
-
-  QCoreApplication application(argc, argv);
-
-  for(int i = 0; i < files.size(); i++)
-    {
-      copy c(destination, files.at(i), bytes, tasks);
-    }
-
-  auto rc = application.exec();
-
-  return static_cast<int> (rc);
+  return EXIT_SUCCESS;
 }

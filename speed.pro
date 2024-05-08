@@ -8,7 +8,7 @@ purge.commands   = find . -name '*~' -exec rm {} \;
 CONFIG	    += qt release warn_on
 LANGUAGE    = C++
 QMAKE_CLEAN += speed
-QT	    += core
+QT	    += concurrent core
 
 freebsd-* {
 QMAKE_CXXFLAGS_RELEASE += -Wall \
@@ -68,7 +68,9 @@ QMAKE_CXXFLAGS_RELEASE += -Wall \
                           -pie \
                           -std=c++17
 } else {
-QMAKE_CXXFLAGS_RELEASE += -Wall \
+QMAKE_CXXFLAGS_RELEASE -= -O2
+QMAKE_CXXFLAGS_RELEASE += -O3 \
+                          -Wall \
                           -Wcast-qual \
                           -Wdouble-promotion \
                           -Wenum-compare \
@@ -86,6 +88,7 @@ QMAKE_CXXFLAGS_RELEASE += -Wall \
                           -Wundef \
                           -fPIE \
                           -fstack-protector-all \
+                          -funroll-loops \
                           -fwrapv \
                           -pedantic \
                           -pie \

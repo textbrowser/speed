@@ -25,8 +25,10 @@
 ** SPEED, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <QDir>
 #include <QFileInfo>
 #include <QObject>
+#include <QtDebug>
 
 class copy: public QObject
 {
@@ -35,18 +37,46 @@ class copy: public QObject
  public:
   copy(const QFileInfo &destination,
        const QFileInfo &file_info,
-       const quint64 bytes,
-       const quint64 tasks):QObject()
+       const quint64 bytes):QObject()
   {
-    m_bytes = bytes;
-    m_destination = destination;
+    m_bytes = qBound(static_cast<qint64> (1024),
+		     static_cast<qint64> (bytes),
+		     static_cast<qint64> (65536));
+    m_destination = destination.isDir() ?
+      destination.canonicalFilePath() +
+      QDir::separator() +
+      file_info.fileName() :
+      destination;
     m_file_info = file_info;
-    m_tasks = tasks;
+  }
+
+  ~copy()
+  {
+  }
+
+  void copy_bytes(void)
+  {
+    QFile destination(m_destination.absoluteFilePath());
+
+    if(!destination.open(QIODevice::Truncate | QIODevice::WriteOnly))
+      return;
+
+    QFile file(m_file_info.absoluteFilePath());
+
+    if(!file.open(QIODevice::ReadOnly))
+      return;
+
+    auto bytes = new char[m_bytes];
+    auto rc = static_cast<qint64> (0);
+
+    while((rc = file.read(bytes, m_bytes)) > 0)
+      destination.write(bytes, rc);
+
+    delete []bytes;
   }
 
  private:
   QFileInfo m_destination;
   QFileInfo m_file_info;
-  quint64 m_bytes;
-  quint64 m_tasks;
+  qint64 m_bytes;
 };
