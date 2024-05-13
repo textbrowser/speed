@@ -40,13 +40,16 @@ int main(int argc, char *argv[])
   QFileInfoList files;
   QHash<QString, char> contains;
   auto bytes = static_cast<quint64> (4096);
+  auto overwrite = false;
 
   for(int i = 0; i < argc; i++)
     if(argv && argv[i])
       {
 	if(argc - 1 == i)
 	  {
-	    if(strcmp(argv[i], "--version") == 0)
+	    if(strcmp(argv[i], "--overwrite") == 0)
+	      overwrite = true;
+	    else if(strcmp(argv[i], "--version") == 0)
 	      {
 		qDebug() << "speed: " << version;
 		return EXIT_SUCCESS;
@@ -61,6 +64,8 @@ int main(int argc, char *argv[])
 	    if(argc > i)
 	      bytes = QVariant(QString(argv[i])).toULongLong();
 	  }
+	else if(strcmp(argv[i], "--overwrite") == 0)
+	  overwrite = true;
 	else if(strcmp(argv[i], "--version") == 0)
 	  {
 	    qDebug() << "speed: " << version;
@@ -116,22 +121,41 @@ int main(int argc, char *argv[])
     {
       const auto &file(files.at(i));
 
-      if(destination.isDir())
-	{
-	  if(destination.canonicalFilePath() == file.canonicalPath())
-	    {
-	      qDebug() << QObject::tr("The file %1 already exists. Skipping.").
-		arg(file.fileName());
-	      continue;
-	    }
-	}
-
       if(destination.canonicalFilePath() == file.canonicalFilePath())
 	{
-	  qDebug() << QObject::tr("Cannot copy %1 onto %2. Skipping.").
-	    arg(file.fileName()).
-	    arg(destination.fileName());
+	  qDebug() << QObject::tr("Cannot write %1 onto itself. Skipping.").
+	    arg(destination.canonicalFilePath());
 	  continue;
+	}
+
+      if(destination.exists() &&
+	 destination.isDir() == false &&
+	 overwrite == false)
+	{
+	  qDebug() << QObject::tr("The file %1 already exists. Skipping.").
+	    arg(destination.absoluteFilePath());
+	  continue;
+	}
+
+      if(destination.isDir())
+	{
+	  QFileInfo d
+	    (destination.absoluteFilePath() +
+	     QDir::separator() +
+	     file.fileName());
+
+	  if(d.canonicalFilePath() == file.canonicalFilePath())
+	    {
+	      qDebug() << QObject::tr("Cannot write %1 onto itself. Skipping.").
+		arg(d.canonicalFilePath());
+	      continue;
+	    }
+	  else if(d.exists() && overwrite == false)
+	    {
+	      qDebug() << QObject::tr("The file %1 already exists. Skipping.").
+		arg(d.absoluteFilePath());
+	      continue;
+	    }
 	}
 
       if(file.isReadable() == false)
