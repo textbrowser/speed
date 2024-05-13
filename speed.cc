@@ -150,7 +150,8 @@ int main(int argc, char *argv[])
 		arg(d.canonicalFilePath());
 	      continue;
 	    }
-	  else if(d.exists() && overwrite == false)
+
+	  if(d.exists() && overwrite == false)
 	    {
 	      qDebug() << QObject::tr("The file %1 already exists. Skipping.").
 		arg(d.absoluteFilePath());
