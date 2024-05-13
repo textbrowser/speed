@@ -83,22 +83,29 @@ int main(int argc, char *argv[])
 		if(!contains.contains(argv[i]))
 		  {
 		    contains[argv[i]] = 0;
-		    files << QFileInfo(argv[i]);
+
+		    auto file(QFileInfo(argv[i]));
+
+		    if(file.isDir())
+		      qDebug() << QObject::tr
+			("The file %1 is a directory. Skipping.").
+			arg(file.fileName());
+		    else
+		      files << file;
 		  }
 	      }
 	    else
 	      foreach(auto const &file, list)
 		if(!contains.contains(file.canonicalFilePath()))
 		  {
+		    contains[file.canonicalFilePath()] = 0;
+
 		    if(file.isDir())
 		      qDebug() << QObject::tr
 			("The file %1 is a directory. Skipping.").
 			arg(file.fileName());
 		    else
-		      {
-			contains[file.canonicalFilePath()] = 0;
-			files << file;
-		      }
+		      files << file;
 		  }
 	  }
       }
