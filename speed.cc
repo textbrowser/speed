@@ -40,14 +40,17 @@ int main(int argc, char *argv[])
   QFileInfoList files;
   QHash<QString, char> contains;
   auto bytes = static_cast<quint64> (4096);
+  auto make_destination = false;
   auto overwrite = false;
 
   for(int i = 0; i < argc; i++)
-    if(argv && argv[i])
+    if(Q_LIKELY(argv && argv[i]))
       {
 	if(argc - 1 == i)
 	  {
-	    if(strcmp(argv[i], "--overwrite") == 0)
+	    if(strcmp(argv[i], "--make-destination") == 0)
+	      make_destination = true;
+	    else if(strcmp(argv[i], "--overwrite") == 0)
 	      overwrite = true;
 	    else if(strcmp(argv[i], "--version") == 0)
 	      {
@@ -64,6 +67,8 @@ int main(int argc, char *argv[])
 	    if(argc > i)
 	      bytes = QVariant(QString(argv[i])).toULongLong();
 	  }
+	else if(strcmp(argv[i], "--make-destination") == 0)
+	  make_destination = true;
 	else if(strcmp(argv[i], "--overwrite") == 0)
 	  overwrite = true;
 	else if(strcmp(argv[i], "--version") == 0)
@@ -80,7 +85,7 @@ int main(int argc, char *argv[])
 
 	    if(list.isEmpty())
 	      {
-		if(!contains.contains(argv[i]))
+		if(contains.contains(argv[i]) == false)
 		  {
 		    contains[argv[i]] = 0;
 
@@ -96,7 +101,7 @@ int main(int argc, char *argv[])
 	      }
 	    else
 	      foreach(auto const &file, list)
-		if(!contains.contains(file.canonicalFilePath()))
+		if(contains.contains(file.canonicalFilePath()) == false)
 		  {
 		    contains[file.canonicalFilePath()] = 0;
 
@@ -110,15 +115,23 @@ int main(int argc, char *argv[])
 	  }
       }
 
-  if(!destination.isWritable())
+  if(destination.isWritable() == false && make_destination == false)
     {
       qDebug() << QObject::tr("Please specify a writable destination.");
       return EXIT_FAILURE;
     }
-  else if(files.isEmpty())
+
+  if(files.isEmpty())
     {
       qDebug() << QObject::tr("Please provide at least one file.");
       return EXIT_FAILURE;
+    }
+
+  if(make_destination)
+    {
+      QDir directory;
+
+      Q_UNUSED(directory.mkpath(destination.absoluteFilePath()));
     }
 
   QList<QFuture<void> > futures;
@@ -187,7 +200,7 @@ int main(int argc, char *argv[])
 
   for(int i = 0; i < copies.size(); i++)
     {
-      if(!futures[i].isFinished())
+      if(futures[i].isFinished() == false)
 	futures[i].waitForFinished();
 
       delete copies.at(i);

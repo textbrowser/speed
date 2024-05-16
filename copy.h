@@ -58,12 +58,12 @@ class copy: public QObject
   {
     QFile destination(m_destination.absoluteFilePath());
 
-    if(!destination.open(QIODevice::WriteOnly))
+    if(destination.open(QIODevice::WriteOnly) == false)
       return;
 
     QFile file(m_file_info.absoluteFilePath());
 
-    if(!file.open(QIODevice::ReadOnly | QIODevice::Unbuffered))
+    if(file.open(QIODevice::ReadOnly | QIODevice::Unbuffered) == false)
       return;
 
     auto bytes = new char[m_bytes];
