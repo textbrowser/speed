@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
   auto bytes = static_cast<quint64> (4096);
   auto make_destination = false;
   auto overwrite = false;
+  auto recursive = false;
 
   for(int i = 0; i < argc; i++)
     if(Q_LIKELY(argv && argv[i]))
@@ -52,6 +53,8 @@ int main(int argc, char *argv[])
 	      make_destination = true;
 	    else if(strcmp(argv[i], "--overwrite") == 0)
 	      overwrite = true;
+	    else if(strcmp(argv[i], "--recursive") == 0)
+	      recursive = true;
 	    else if(strcmp(argv[i], "--version") == 0)
 	      {
 		qDebug() << "speed: " << version;
@@ -71,6 +74,8 @@ int main(int argc, char *argv[])
 	  make_destination = true;
 	else if(strcmp(argv[i], "--overwrite") == 0)
 	  overwrite = true;
+	else if(strcmp(argv[i], "--recursive") == 0)
+	  recursive = true;
 	else if(strcmp(argv[i], "--version") == 0)
 	  {
 	    qDebug() << "speed: " << version;
