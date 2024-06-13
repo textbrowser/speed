@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
 
 		    auto file(QFileInfo(argv[i]));
 
-		    if(file.isDir())
+		    if(file.isDir() && recursive == false)
 		      qDebug() << QObject::tr
 			("The file %1 is a directory. Skipping.").
 			arg(file.fileName());
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 		  {
 		    contains[file.canonicalFilePath()] = 0;
 
-		    if(file.isDir())
+		    if(file.isDir() && recursive == false)
 		      qDebug() << QObject::tr
 			("The file %1 is a directory. Skipping.").
 			arg(file.fileName());
