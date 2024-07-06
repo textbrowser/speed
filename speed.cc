@@ -32,7 +32,7 @@
 
 #include "copy.h"
 
-const static char *version = "2024.05.08";
+const static char *version = "2024.07.10";
 
 int main(int argc, char *argv[])
 {
@@ -123,12 +123,14 @@ int main(int argc, char *argv[])
   if(destination.isWritable() == false && make_destination == false)
     {
       qDebug() << QObject::tr("Please specify a writable destination.");
+      qDebug() << QObject::tr("speed [options] origin destination");
       return EXIT_FAILURE;
     }
 
   if(files.isEmpty())
     {
       qDebug() << QObject::tr("Please provide at least one file.");
+      qDebug() << QObject::tr("speed [options] origin destination");
       return EXIT_FAILURE;
     }
 
