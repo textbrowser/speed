@@ -59,12 +59,20 @@ class copy: public QObject
     QFile destination(m_destination.absoluteFilePath());
 
     if(destination.open(QIODevice::WriteOnly) == false)
-      return;
+      {
+	qDebug() << tr("Could not open %1 for writing.").
+	  arg(m_destination.absoluteFilePath());
+	return;
+      }
 
     QFile file(m_file_info.absoluteFilePath());
 
     if(file.open(QIODevice::ReadOnly | QIODevice::Unbuffered) == false)
-      return;
+      {
+	qDebug() << tr("Could not open %1 for reading.").
+	  arg(m_file_info.absoluteFilePath());
+	return;
+      }
 
     auto bytes = new char[m_bytes];
     auto rc = static_cast<qint64> (0);

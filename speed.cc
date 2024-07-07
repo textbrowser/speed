@@ -120,7 +120,9 @@ int main(int argc, char *argv[])
 	  }
       }
 
-  if(destination.isWritable() == false && make_destination == false)
+  if(destination.exists() &&
+     destination.isWritable() == false &&
+     make_destination == false)
     {
       qDebug() << QObject::tr("Please specify a writable destination.");
       qDebug() << QObject::tr("speed [options] origin destination");
@@ -136,9 +138,17 @@ int main(int argc, char *argv[])
 
   if(make_destination)
     {
-      QDir directory;
+      if(destination.path().isEmpty())
+	{
+	  qDebug() << QObject::tr("speed [options] origin destination");
+	  return EXIT_FAILURE;
+	}
+      else
+	{
+	  QDir directory;
 
-      Q_UNUSED(directory.mkpath(destination.absoluteFilePath()));
+	  Q_UNUSED(directory.mkpath(destination.absoluteFilePath()));
+	}
     }
 
   QList<QFuture<void> > futures;
