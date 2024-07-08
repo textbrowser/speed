@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
   auto bytes = static_cast<quint64> (4096);
   auto make_destination = false;
   auto overwrite = false;
+  auto speed(QObject::tr("speed [options] origin destination"));
 
   for(int i = 1; i < argc; i++)
     if(Q_LIKELY(argv && argv[i]))
@@ -108,28 +109,28 @@ int main(int argc, char *argv[])
      make_destination == false)
     {
       qDebug() << QObject::tr("Please specify a writable destination.");
-      qDebug() << QObject::tr("speed [options] origin destination");
+      qDebug() << speed;
       return EXIT_FAILURE;
     }
 
   if(destination.isDir() == false && files.size() > 1)
     {
       qDebug() << QObject::tr("Please specify a writable directory.");
-      qDebug() << QObject::tr("speed [options] origin destination");
+      qDebug() << speed;
       return EXIT_FAILURE;
     }
 
   if(destination.path().isEmpty())
     {
       qDebug() << QObject::tr("Please specify a writable destination.");
-      qDebug() << QObject::tr("speed [options] origin destination");
+      qDebug() << speed;
       return EXIT_FAILURE;
     }
 
   if(files.isEmpty())
     {
       qDebug() << QObject::tr("Please provide at least one file.");
-      qDebug() << QObject::tr("speed [options] origin destination");
+      qDebug() << speed;
       return EXIT_FAILURE;
     }
 
@@ -137,7 +138,7 @@ int main(int argc, char *argv[])
     {
       if(destination.path().isEmpty())
 	{
-	  qDebug() << QObject::tr("speed [options] origin destination");
+	  qDebug() << speed;
 	  return EXIT_FAILURE;
 	}
       else
