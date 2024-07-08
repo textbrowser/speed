@@ -112,6 +112,13 @@ int main(int argc, char *argv[])
       return EXIT_FAILURE;
     }
 
+  if(destination.isDir() == false && files.size() > 1)
+    {
+      qDebug() << QObject::tr("Please specify a writable directory.");
+      qDebug() << QObject::tr("speed [options] origin destination");
+      return EXIT_FAILURE;
+    }
+
   if(destination.path().isEmpty())
     {
       qDebug() << QObject::tr("Please specify a writable destination.");
