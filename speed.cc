@@ -42,28 +42,11 @@ int main(int argc, char *argv[])
   auto bytes = static_cast<quint64> (4096);
   auto make_destination = false;
   auto overwrite = false;
-  auto recursive = false;
 
-  for(int i = 0; i < argc; i++)
+  for(int i = 1; i < argc; i++)
     if(Q_LIKELY(argv && argv[i]))
       {
-	if(argc - 1 == i)
-	  {
-	    if(strcmp(argv[i], "--make-destination") == 0)
-	      make_destination = true;
-	    else if(strcmp(argv[i], "--overwrite") == 0)
-	      overwrite = true;
-	    else if(strcmp(argv[i], "--recursive") == 0)
-	      recursive = true;
-	    else if(strcmp(argv[i], "--version") == 0)
-	      {
-		qDebug() << "speed: " << version;
-		return EXIT_SUCCESS;
-	      }
-	    else
-	      destination = QFileInfo(argv[i]);
-	  }
-	else if(strcmp(argv[i], "--bytes") == 0)
+	if(strcmp(argv[i], "--bytes") == 0)
 	  {
 	    i += 1;
 
@@ -74,55 +57,62 @@ int main(int argc, char *argv[])
 	  make_destination = true;
 	else if(strcmp(argv[i], "--overwrite") == 0)
 	  overwrite = true;
-	else if(strcmp(argv[i], "--recursive") == 0)
-	  recursive = true;
 	else if(strcmp(argv[i], "--version") == 0)
 	  {
 	    qDebug() << "speed: " << version;
 	    return EXIT_SUCCESS;
 	  }
-	else if(i > 0)
+	else
 	  {
-	    QDir directory(argv[i]);
-	    auto list
-	      (directory.
-	       entryInfoList(QDir::Files | QDir::NoSymLinks | QDir::Readable));
-
-	    if(list.isEmpty())
-	      {
-		if(contains.contains(argv[i]) == false)
-		  {
-		    contains[argv[i]] = 0;
-
-		    auto file(QFileInfo(argv[i]));
-
-		    if(file.isDir() && recursive == false)
-		      qDebug() << QObject::tr
-			("The file %1 is a directory. Skipping.").
-			arg(file.fileName());
-		    else
-		      files << file;
-		  }
-	      }
+	    if(argc - 1 == i)
+	      destination = QFileInfo(argv[i]);
 	    else
-	      foreach(auto const &file, list)
-		if(contains.contains(file.canonicalFilePath()) == false)
-		  {
-		    contains[file.canonicalFilePath()] = 0;
+	      {
+		auto file(QFileInfo(argv[i]));
 
-		    if(file.isDir() && recursive == false)
-		      qDebug() << QObject::tr
-			("The file %1 is a directory. Skipping.").
-			arg(file.fileName());
+		if(file.isReadable())
+		  {
+		    if(file.isDir())
+		      {
+			QDirIterator it
+			  (file.absoluteFilePath(),
+			   QDirIterator::Subdirectories);
+
+			while(it.hasNext())
+			  {
+			    QFileInfo file(it.next());
+
+			    if(file.isFile())
+			      {
+				if(file.isReadable())
+				  files << file;
+				else
+				  qDebug() << QObject::tr
+				    ("The file %1 is not readable.").
+				    arg(file.absoluteFilePath());
+			      }
+			  }
+		      }
 		    else
 		      files << file;
 		  }
+		else
+		  qDebug() << QObject::tr("The file %1 is not readable.").
+		    arg(file.absoluteFilePath());
+	      }
 	  }
       }
 
   if(destination.exists() &&
      destination.isWritable() == false &&
      make_destination == false)
+    {
+      qDebug() << QObject::tr("Please specify a writable destination.");
+      qDebug() << QObject::tr("speed [options] origin destination");
+      return EXIT_FAILURE;
+    }
+
+  if(destination.path().isEmpty())
     {
       qDebug() << QObject::tr("Please specify a writable destination.");
       qDebug() << QObject::tr("speed [options] origin destination");
@@ -147,7 +137,12 @@ int main(int argc, char *argv[])
 	{
 	  QDir directory;
 
-	  Q_UNUSED(directory.mkpath(destination.absoluteFilePath()));
+	  if(!directory.mkpath(destination.absoluteFilePath()))
+	    {
+	      qDebug() << QObject::tr("Cannot create the path %1.").
+		arg(destination.absoluteFilePath());
+	      return EXIT_FAILURE;
+	    }
 	}
     }
 

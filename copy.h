@@ -74,7 +74,14 @@ class copy: public QObject
 	return;
       }
 
-    auto bytes = new char[m_bytes];
+    auto bytes = new(std::nothrow) char[m_bytes];
+
+    if(!bytes)
+      {
+	qDebug() << tr("Memory error.");
+	return;
+      }
+
     auto rc = static_cast<qint64> (0);
 
     while((rc = file.read(bytes, m_bytes)) > 0)
