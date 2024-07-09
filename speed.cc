@@ -113,7 +113,9 @@ int main(int argc, char *argv[])
       return EXIT_FAILURE;
     }
 
-  if(destination.isDir() == false && files.size() > 1)
+  if(destination.isDir() == false &&
+     files.size() > 1 &&
+     make_destination == false)
     {
       qDebug() << QObject::tr("Please specify a writable directory.");
       qDebug() << speed;
