@@ -161,7 +161,7 @@ int main(int argc, char *argv[])
 
   for(int i = 0; i < files.size(); i++)
     {
-      const auto &file(files.at(i));
+      auto const file(files.at(i));
 
       if(destination.canonicalFilePath() == file.canonicalFilePath())
 	{
