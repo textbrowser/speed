@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 
 			while(it.hasNext())
 			  {
-			    QFileInfo file(it.next());
+			    QFileInfo const file(it.next());
 
 			    if(file.isFile())
 			      {
@@ -181,7 +181,7 @@ int main(int argc, char *argv[])
 
       if(destination.isDir())
 	{
-	  QFileInfo d
+	  QFileInfo const d
 	    (destination.absoluteFilePath() +
 	     QDir::separator() +
 	     file.fileName());
