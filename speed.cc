@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 	  destination = QFileInfo(argv[i]);
 	else
 	  {
-	    auto file(QFileInfo(argv[i]));
+	    auto const file(QFileInfo(argv[i]));
 
 	    if(file.isReadable())
 	      {
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 	  continue;
 	}
 
-      if(destination.isDir())
+      if(destination.isDir() && file.isDir() == false)
 	{
 	  QFileInfo const d
 	    (destination.absoluteFilePath() +
@@ -196,7 +196,8 @@ int main(int argc, char *argv[])
 
 	  if(d.canonicalFilePath() == file.canonicalFilePath())
 	    {
-	      qDebug() << QObject::tr("Cannot write %1 onto itself. Skipping.").
+	      qDebug() << QObject::tr
+		("Cannot write %1 onto itself. Skipping.").
 		arg(d.canonicalFilePath());
 	      continue;
 	    }
