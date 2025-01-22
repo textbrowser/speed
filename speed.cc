@@ -37,8 +37,7 @@ const static char *version = "2024.07.10";
 int main(int argc, char *argv[])
 {
   QFileInfo destination;
-  QFileInfoList files;
-  QHash<QString, char> contains;
+  QHash<QString, char> files;
   auto bytes = static_cast<quint64> (4096);
   auto make_destination = false;
   auto overwrite = false;
@@ -99,10 +98,10 @@ int main(int argc, char *argv[])
 			continue;
 		      }
 
-		    files << file;
+		    files.insert(file.absoluteFilePath(), 0);
 		  }
 		else
-		  files << file;
+		  files.insert(file.absoluteFilePath(), 0);
 	      }
 	    else
 	      qDebug() << QObject::tr("The file %1 is not readable.").
@@ -162,12 +161,15 @@ int main(int argc, char *argv[])
 	}
     }
 
+  QHashIterator<QString, char> it(files);
   QList<QFuture<void> > futures;
   QList<copy *> copies;
 
-  for(int i = 0; i < files.size(); i++)
+  while(it.hasNext())
     {
-      auto const file(files.at(i));
+      it.next();
+
+      QFileInfo const file(it.key());
 
       if(destination.canonicalFilePath() == file.canonicalFilePath())
 	{
