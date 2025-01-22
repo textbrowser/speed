@@ -42,10 +42,13 @@ int main(int argc, char *argv[])
   auto bytes = static_cast<quint64> (4096);
   auto make_destination = false;
   auto overwrite = false;
+  auto recursive = false;
   auto speed(QObject::tr("speed [options] origin destination"));
 
   for(int i = 1; i < argc; i++)
-    if(Q_LIKELY(argv && argv[i]))
+    if(!argv || !argv[i])
+      continue;
+    else
       {
 	if(strcmp(argv[i], "--bytes") == 0)
 	  {
@@ -58,49 +61,52 @@ int main(int argc, char *argv[])
 	  make_destination = true;
 	else if(strcmp(argv[i], "--overwrite") == 0)
 	  overwrite = true;
+	else if(strcmp(argv[i], "--recursive") == 0)
+	  recursive = true;
 	else if(strcmp(argv[i], "--version") == 0)
 	  {
 	    qDebug() << "speed: " << version;
 	    return EXIT_SUCCESS;
 	  }
+      }
+
+  for(int i = 1; i < argc; i++)
+    if(!argv || !argv[i])
+      continue;
+    else
+      {
+	if(strcmp(argv[i], "--bytes") == 0 ||
+	   strcmp(argv[i], "--make-destination") == 0 ||
+	   strcmp(argv[i], "--overwrite") == 0 ||
+	   strcmp(argv[i], "--recursive") == 0 ||
+	   strcmp(argv[i], "--version") == 0)
+	  continue;
+	else if(argc - 1 == i)
+	  destination = QFileInfo(argv[i]);
 	else
 	  {
-	    if(argc - 1 == i)
-	      destination = QFileInfo(argv[i]);
-	    else
+	    auto file(QFileInfo(argv[i]));
+
+	    if(file.isReadable())
 	      {
-		auto file(QFileInfo(argv[i]));
-
-		if(file.isReadable())
+		if(file.isDir())
 		  {
-		    if(file.isDir())
+		    if(!recursive)
 		      {
-			QDirIterator it
-			  (file.absoluteFilePath(),
-			   QDirIterator::Subdirectories);
-
-			while(it.hasNext())
-			  {
-			    QFileInfo const file(it.next());
-
-			    if(file.isFile())
-			      {
-				if(file.isReadable())
-				  files << file;
-				else
-				  qDebug() << QObject::tr
-				    ("The file %1 is not readable.").
-				    arg(file.absoluteFilePath());
-			      }
-			  }
+			qDebug() << QObject::tr
+			  ("Directory %1 specified without "
+			   "--recursive option.").arg(file.absoluteFilePath());
+			continue;
 		      }
-		    else
-		      files << file;
+
+		    files << file;
 		  }
 		else
-		  qDebug() << QObject::tr("The file %1 is not readable.").
-		    arg(file.absoluteFilePath());
+		  files << file;
 	      }
+	    else
+	      qDebug() << QObject::tr("The file %1 is not readable.").
+		arg(file.absoluteFilePath());
 	  }
       }
 
@@ -199,6 +205,29 @@ int main(int argc, char *argv[])
 		arg(d.absoluteFilePath());
 	      continue;
 	    }
+	}
+
+      if(file.isDir() && file.isReadable())
+	{
+	  QDirIterator it
+	    (file.absoluteFilePath(), QDirIterator::Subdirectories);
+
+	  while(it.hasNext())
+	    {
+	      QFileInfo const file(it.next());
+
+	      if(file.isFile())
+		{
+		  if(file.isReadable())
+		    qDebug() << file;
+		  else
+		    qDebug() << QObject::tr
+		      ("The file %1 is not readable.").
+		      arg(file.absoluteFilePath());
+		}
+	    }
+
+	  continue;
 	}
 
       if(file.isReadable() == false)

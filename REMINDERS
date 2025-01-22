@@ -2,7 +2,6 @@ Completed Items
 
 - Confirmation parameter: --overwrite.
 - Console interrupt.
+- Recursion: QDirIterator.
 
 Remaining Items
-
-- Recursion: QDirIterator.
