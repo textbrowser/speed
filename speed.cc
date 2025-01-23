@@ -32,7 +32,22 @@
 
 #include "copy.h"
 
-const static char *version = "2024.07.10";
+const static char *version = "2025.01.23";
+static QHash<copy *, QFuture<void> > futures;
+
+static void create_future
+(const QFileInfo &destination, const QFileInfo &file, const quint64 bytes)
+{
+  QFuture<void> future;
+  auto c = new copy(destination, file, bytes);
+
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+  future = QtConcurrent::run(c, &copy::copy_bytes);
+#else
+  future = QtConcurrent::run(&copy::copy_bytes, c);
+#endif
+  futures.insert(c, future);
+}
 
 int main(int argc, char *argv[])
 {
@@ -54,7 +69,22 @@ int main(int argc, char *argv[])
 	    i += 1;
 
 	    if(argc > i)
-	      bytes = QVariant(QString(argv[i])).toULongLong();
+	      {
+		auto ok = false;
+
+		bytes = QVariant(QString(argv[i])).toULongLong(&ok);
+
+		if(!ok)
+		  {
+		    qDebug() << QObject::tr("Missing valid --bytes argument.");
+		    return EXIT_FAILURE;
+		  }
+	      }
+	    else
+	      {
+		qDebug() << QObject::tr("Missing --bytes argument.");
+		return EXIT_FAILURE;
+	      }
 	  }
 	else if(strcmp(argv[i], "--make-destination") == 0)
 	  make_destination = true;
@@ -74,11 +104,15 @@ int main(int argc, char *argv[])
       continue;
     else
       {
-	if(strcmp(argv[i], "--bytes") == 0 ||
-	   strcmp(argv[i], "--make-destination") == 0 ||
-	   strcmp(argv[i], "--overwrite") == 0 ||
-	   strcmp(argv[i], "--recursive") == 0 ||
-	   strcmp(argv[i], "--version") == 0)
+	if(strcmp(argv[i], "--bytes") == 0)
+	  {
+	    i += 1;
+	    continue;
+	  }
+	else if(strcmp(argv[i], "--make-destination") == 0 ||
+		strcmp(argv[i], "--overwrite") == 0 ||
+		strcmp(argv[i], "--recursive") == 0 ||
+		strcmp(argv[i], "--version") == 0)
 	  continue;
 	else if(argc - 1 == i)
 	  destination = QFileInfo(argv[i]);
@@ -161,15 +195,13 @@ int main(int argc, char *argv[])
 	}
     }
 
-  QHashIterator<QString, char> it(files);
-  QList<QFuture<void> > futures;
-  QList<copy *> copies;
+  QHashIterator<QString, char> it_a(files);
 
-  while(it.hasNext())
+  while(it_a.hasNext())
     {
-      it.next();
+      it_a.next();
 
-      QFileInfo const file(it.key());
+      QFileInfo const file(it_a.key());
 
       if(destination.canonicalFilePath() == file.canonicalFilePath())
 	{
@@ -214,15 +246,37 @@ int main(int argc, char *argv[])
 	{
 	  QDirIterator it
 	    (file.absoluteFilePath(), QDirIterator::Subdirectories);
+	  auto directory(file.absoluteFilePath());
+
+	  if(directory.endsWith(QDir::separator()))
+	    // QDir::separator() contains a single character.
+
+	    directory = directory.mid(0, directory.length() - 1);
+
+	  directory = QFileInfo(directory).fileName();
 
 	  while(it.hasNext())
 	    {
 	      QFileInfo const file(it.next());
 
-	      if(file.isFile())
+	      if(file.isDir())
+		QDir().mkpath
+		  (destination.absoluteFilePath() +
+		   QDir::separator() +
+		   directory +
+		   QDir::separator() +
+		   file.baseName());
+	      else if(file.isFile())
 		{
 		  if(file.isReadable())
-		    qDebug() << file;
+		    {
+		      auto d = destination.absoluteFilePath() +
+			QDir::separator();
+
+		      d += file.absoluteFilePath().mid
+			(file.absoluteFilePath().lastIndexOf(directory));
+		      create_future(QFileInfo(d), file, bytes);
+		    }
 		  else
 		    qDebug() << QObject::tr
 		      ("The file %1 is not readable.").
@@ -240,24 +294,24 @@ int main(int argc, char *argv[])
 	  continue;
 	}
 
-      QFuture<void> future;
-      auto c = new copy(destination, file, bytes);
-
-      copies << c;
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-      future = QtConcurrent::run(c, &copy::copy_bytes);
-#else
-      future = QtConcurrent::run(&copy::copy_bytes, c);
-#endif
-      futures << future;
+      create_future(destination, file, bytes);
     }
 
-  for(int i = 0; i < copies.size(); i++)
-    {
-      if(futures[i].isFinished() == false)
-	futures[i].waitForFinished();
+  QMutableHashIterator<copy *, QFuture<void> > it_b(futures);
 
-      delete copies.at(i);
+  while(it_b.hasNext())
+    {
+      it_b.next();
+
+      auto const future(it_b.value());
+
+      if(future.isFinished())
+	{
+	  delete it_b.key();
+	  it_b.remove();
+	}
+      else
+	it_b.toFront();
     }
 
   return EXIT_SUCCESS;
