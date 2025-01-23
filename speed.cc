@@ -260,12 +260,15 @@ int main(int argc, char *argv[])
 	      QFileInfo const file(it.next());
 
 	      if(file.isDir())
-		QDir().mkpath
-		  (destination.absoluteFilePath() +
-		   QDir::separator() +
-		   directory +
-		   QDir::separator() +
-		   file.baseName());
+		{
+		  if(file.isHidden() == false)
+		    QDir().mkpath
+		      (destination.absoluteFilePath() +
+		       QDir::separator() +
+		       directory +
+		       QDir::separator() +
+		       file.fileName());
+		}
 	      else if(file.isFile())
 		{
 		  if(file.isReadable())
@@ -274,8 +277,13 @@ int main(int argc, char *argv[])
 			QDir::separator();
 
 		      d += file.absoluteFilePath().mid
-			(file.absoluteFilePath().lastIndexOf(directory));
-		      create_future(QFileInfo(d), file, bytes);
+			(file.absoluteFilePath().indexOf(directory));
+
+		      if(QFileInfo(d).exists() && overwrite)
+			create_future(QFileInfo(d), file, bytes);
+		      else
+			qDebug() << QObject::tr("The file %1 already exists. "
+						"Skipping.").arg(d);
 		    }
 		  else
 		    qDebug() << QObject::tr
