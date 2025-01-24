@@ -279,11 +279,11 @@ int main(int argc, char *argv[])
 		      d += file.absoluteFilePath().mid
 			(file.absoluteFilePath().indexOf(directory));
 
-		      if(QFileInfo(d).exists() && overwrite)
-			create_future(QFileInfo(d), file, bytes);
+		      if(QFileInfo(d).exists() && overwrite == false)
+			qDebug() << QObject::tr
+			  ("The file %1 already exists. Skipping.").arg(d);
 		      else
-			qDebug() << QObject::tr("The file %1 already exists. "
-						"Skipping.").arg(d);
+			create_future(QFileInfo(d), file, bytes);
 		    }
 		  else
 		    qDebug() << QObject::tr

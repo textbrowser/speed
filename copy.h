@@ -27,21 +27,19 @@
 
 #include <QDir>
 #include <QFileInfo>
-#include <QObject>
 #include <QtDebug>
 
-class copy: public QObject
+class copy
 {
-  Q_OBJECT
-
  public:
   copy(const QFileInfo &destination,
        const QFileInfo &file_info,
-       const quint64 bytes):QObject()
+       const quint64 bytes)
   {
     m_bytes = qBound(static_cast<qint64> (1024),
 		     static_cast<qint64> (bytes),
 		     static_cast<qint64> (131072));
+    m_char_array = new char[static_cast<std::size_t> (m_bytes)];
     m_destination = destination.isDir() ?
       QFileInfo(destination.absoluteFilePath() +
 		QDir::separator() +
@@ -52,46 +50,38 @@ class copy: public QObject
 
   ~copy()
   {
+    delete []m_char_array;
   }
 
   void copy_bytes(void)
   {
-    QFile destination(m_destination.absoluteFilePath());
+    QFile target(m_destination.absoluteFilePath());
 
-    if(destination.open(QIODevice::WriteOnly) == false)
+    if(target.open(QIODevice::WriteOnly) == false)
       {
-	qDebug() << tr("Could not open %1 for writing.").
+	qDebug() << QObject::tr("Could not open %1 for writing.").
 	  arg(m_destination.absoluteFilePath());
 	return;
       }
 
-    QFile file(m_file_info.absoluteFilePath());
+    QFile source(m_file_info.absoluteFilePath());
 
-    if(file.open(QIODevice::ReadOnly | QIODevice::Unbuffered) == false)
+    if(source.open(QIODevice::ReadOnly | QIODevice::Unbuffered) == false)
       {
-	qDebug() << tr("Could not open %1 for reading.").
+	qDebug() << QObject::tr("Could not open %1 for reading.").
 	  arg(m_file_info.absoluteFilePath());
-	return;
-      }
-
-    auto bytes = new(std::nothrow) char[m_bytes];
-
-    if(!bytes)
-      {
-	qDebug() << tr("Memory error.");
 	return;
       }
 
     auto rc = static_cast<qint64> (0);
 
-    while((rc = file.read(bytes, m_bytes)) > 0)
-      destination.write(bytes, rc);
-
-    delete []bytes;
+    while((rc = source.read(m_char_array, m_bytes)) > 0)
+      target.write(m_char_array, rc);
   }
 
  private:
   QFileInfo m_destination;
   QFileInfo m_file_info;
+  char *m_char_array;
   qint64 m_bytes;
 };

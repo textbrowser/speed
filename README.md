@@ -1,6 +1,6 @@
 # speed
 
-Something fast, something quick. Perhaps deep C++ or lazy Qt.
+Super-fast file-copying machine.
 
 ```
 time cp /home/saturn/data/* /home/saturn/tmp.d/.
