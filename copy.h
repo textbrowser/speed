@@ -55,21 +55,21 @@ class copy
 
   void copy_bytes(void)
   {
-    QFile target(m_destination.absoluteFilePath());
-
-    if(target.open(QIODevice::WriteOnly) == false)
-      {
-	qDebug() << QObject::tr("Could not open %1 for writing.").
-	  arg(m_destination.absoluteFilePath());
-	return;
-      }
-
     QFile source(m_file_info.absoluteFilePath());
 
     if(source.open(QIODevice::ReadOnly | QIODevice::Unbuffered) == false)
       {
 	qDebug() << QObject::tr("Could not open %1 for reading.").
 	  arg(m_file_info.absoluteFilePath());
+	return;
+      }
+
+    QFile target(m_destination.absoluteFilePath());
+
+    if(target.open(QIODevice::Truncate | QIODevice::WriteOnly) == false)
+      {
+	qDebug() << QObject::tr("Could not open %1 for writing.").
+	  arg(m_destination.absoluteFilePath());
 	return;
       }
 
