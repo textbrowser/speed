@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
 	  destination = QFileInfo(argv[i]);
 	else
 	  {
-	    QFileInfo const file(QFileInfo(argv[i]));
+	    QFileInfo const file(argv[i]);
 
 	    if(file.isReadable())
 	      {
